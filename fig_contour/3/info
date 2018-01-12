@@ -1,0 +1,11 @@
+sin(2*theta)^2 = 0.000631, dm^2 = 50.118723
+muTrue = 9.36163 17.9654 23.5359 20.2398 16.0313
+measurement: 97 111 128 133 99
+MaximumLikelihoodParameters: 0.000579085 51.9554
+muBest = 8.81899 15.3173 21.6851 19.2029 15.4189
+L: 5.705647
+Info in <TCanvas::Print>: png file hist1D.png has been created
+Info in <TCanvas::Print>: png file contour1.png has been created
+Info in <TCanvas::Print>: png file contour2.png has been created
+
+//    SetMeasurement(pow(10,-3.2),pow(10,1.7));
