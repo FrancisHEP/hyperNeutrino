@@ -26,11 +26,7 @@ int GetPoisson(double mean);                            //generate poisson rando
 vector<double> GetPoisson(vector<double> mean);
 vector<double> FastIntegral(double x1, double x2);
 void PoltHist1D(vector<double> vec);
-//these 4 variables are for dchi_c^2
-extern vector<double> Nsimu(5,0);   //MUST INITIALIZE
-extern vector<double> Tbest(5,0);   //MUST INITIALIZE
-extern vector<double> Xbest(2,0);   //MUST INITIALIZE
-extern double chi2best=0;           //MUST INITIALIZE
+
 
 
 void PrintVector(vector<double> a)
@@ -143,11 +139,12 @@ public:
     void SetValue (double x1, double x2);
     void PrintValue();
     void FindDchi2(int samples);
-
+    
     double sin2;
     double dm2;
     double dchi2;
-
+    double chiTemp;
+    
     vector<double> P;       //Probability in 5 bands, [1 2 3 4 5]
     vector<double> muTrue;  //P[5]*10000
 };
@@ -191,12 +188,12 @@ vector<double> FindMinimum(double x1, double x2)
     John.SetMaxIterations(100000);
     int err1 = John.Migrad();   //NEVER DELETE IT!!!!!!
     while (0) err1 = 0;
-
+    
     double x1_,x1_err;
     double x2_,x2_err;
     John.GetParameter(0,x1_,x1_err);
     John.GetParameter(1,x2_,x2_err);
-
+    
     vector<double> vec(2,0);
     vec[0] = x1_;
     vec[1] = x2_;
@@ -216,13 +213,13 @@ void PhasePoint::FindDchi2(int samples)
         double L1 = SumVector(L(nOrigin,muTrue,b));
         double L2 = SumVector(L(nOrigin,muBest,b));
         chi[i] = L1 - L2;
-        if (samples == 1) { //generate a measurement set {n[i]} if samples == 1
+        chiTemp = L2;
+        if (samples == 1) {
             printf("measurement: ");PrintVector(nOrigin);
             printf("MaximumLikelihoodParameters: ");PrintVector(Pnew);
             printf("muBest = ");PrintVector(muBest);
             printf("L: %f\n",L2);
             PoltHist1D(nOrigin);
-            Nsimu=nOrigin;Xbest=Pnew;Tbest=muBest;chi2best=L2;
         }
     }
     //PrintVector(chi);
@@ -248,8 +245,8 @@ void PlotDchi2(int N,int samples)   //points,samples
         }
     }
     //PrintVector(dchi2V);
-
-
+    
+    
     //do plot
     TCanvas cvs;
     cvs.SetWindowSize(200,200);
@@ -260,21 +257,22 @@ void PlotDchi2(int N,int samples)   //points,samples
     gStyle->SetOptStat(0);  //hide notes
     TAxis *xa = hist->GetXaxis();
     TAxis *ya = hist->GetYaxis();
-
+    
     xa->SetTitle("log_{10}(sin^{2}(2#theta))");
     ya->SetTitle("log_{10}(#Delta m^{2})");
     hist->Draw("surf3");    cvs.Print("1.png");    //good
     hist->Draw("LEGO2Z");   cvs.Print("2.png");    //good
     hist->Draw("COLZ");     cvs.Print("3.png");    //good
-
+    
     //save Matrix
     remove("Matrix");
     ofstream ofile;
     ofile.open("Matrix",ios::out|ios::app);
     for (int i=0;i<N;i++)   for (int j=0;j<N;j++)   ofile<<Matrix[i][j]<<endl;
     ofile.close();
-
-    //interpolation
+    
+    
+    //do interpolation
     printf("Interpolating...\n");
     int add = 9;    //points between 2 origin points.
     int N2 = (add+1)*(N-1)+1;
@@ -287,14 +285,8 @@ void PlotDchi2(int N,int samples)   //points,samples
         }
     printf("Done\n");
 
-    //save Matrix2
-    remove("Matrix2");
-    ofstream ofile2;
-    ofile2.open("Matrix2",ios::out|ios::app);
-    for (int i=0;i<N2;i++)   for (int j=0;j<N2;j++)   ofile2<<Matrix2[i][j]<<endl;
-    ofile2.close();
-
-    //plot after interpolation
+    
+    //do plot after interpolation
     TCanvas cvs2;
     cvs2.SetWindowSize(200,200);
     TH2D* hist2 = new TH2D("","",N2,-4,0,N2,0,3);
@@ -304,12 +296,20 @@ void PlotDchi2(int N,int samples)   //points,samples
     gStyle->SetOptStat(0);  //hide notes
     TAxis *xa2 = hist2->GetXaxis();
     TAxis *ya2 = hist2->GetYaxis();
-
+    
     xa2->SetTitle("log_{10}(sin^{2}(2#theta))");
     ya2->SetTitle("log_{10}(#Delta m^{2})");
     hist2->Draw("surf3");    cvs2.Print("4.png");    //good
-    hist2->Draw("COLZ");     cvs2.Print("5.png");    //good
+    //hist2->Draw("LEGO2Z");   cvs2.Print("5.png");    //not good for time
+    hist2->Draw("COLZ");     cvs2.Print("6.png");    //good
     hist2->Draw("CONT3");    cvs2.Print("contour.png");    //contour
+    
+    //save Matrix2
+    remove("Matrix2");
+    ofstream ofile2;
+    ofile2.open("Matrix2",ios::out|ios::app);
+    for (int i=0;i<N2;i++)   for (int j=0;j<N2;j++)   ofile2<<Matrix2[i][j]<<endl;
+    ofile2.close();
 }
 
 void PoltHist1D(vector<double> vec)
@@ -323,14 +323,14 @@ void PoltHist1D(vector<double> vec)
 
     TCanvas cvs2;
     cvs2.SetWindowSize(200,200);
-
+    
     xa2->SetTitle("counts");
     ya2->SetTitle("E/GeV");
     hist2->Draw("h1st");    cvs2.Print("hist1D.png");    //good
 }
 
-void PlotContour()
-{   //plot contour according to 4 extern variables Nsimu,Tbest,Xbest,chi2best.
+void PlotContour(double chi)
+{
     //read
     ifstream ifile;
     double value=0;
@@ -342,26 +342,19 @@ void PlotContour()
         if(ifile.eof()!=0) break;
     }ifile.close();
     int N = int(sqrt(count-1));
-
-    // find dchi2 of points
-    double x1=0; double x2=0;
-    PhasePoint(now);
-    vector<double> Tnow(5,0);
-    double dchi2;
+    
     double Matrix[N][N];
     ifile.open("Matrix2");
     for (int i=0;i<N;i++){
         for (int j=0;j<N;j++){
             ifile>>value;
             if(ifile.eof()!=0) break;
-            x1 = 4*(double(i)+0.5)/double(N)-4;
-            x2 = 3*(double(j)+0.5)/double(N);
-            now.SetValue(pow(10,x1),pow(10,x2));
-            Tnow = now.muTrue;
-            dchi2 = SumVector(L(Nsimu,Tnow ,b)) - SumVector(L(Nsimu,Tbest,b));
-            Matrix[i][j] = value - dchi2;
-                if (Matrix[i][j]<0) {Matrix[i][j] = 0  ;}
-                else                {Matrix[i][j] = 0.9;}
+            Matrix[i][j] = value - chi;
+                if (Matrix[i][j]<0) {
+                    Matrix[i][j] = 0;
+                } else {
+                    Matrix[i][j] = 0.9;
+                }
         }
     }
     ifile.close();
@@ -376,12 +369,12 @@ void PlotContour()
     gStyle->SetOptStat(0);  //hide notes
     TAxis *xa2 = hist2->GetXaxis();
     TAxis *ya2 = hist2->GetYaxis();
-
+    
     xa2->SetTitle("log_{10}(sin^{2}(2#theta))");
     ya2->SetTitle("log_{10}(#Delta m^{2})");
     hist2->Draw("COLZ");     cvs2.Print("contour1.png");    //good
     hist2->Draw("CONT3");    cvs2.Print("contour2.png");    //contour
-
+    
 }
 
 void SinglePoint(double x1,double x2,int samples)
@@ -399,7 +392,8 @@ void SetMeasurement(double x1,double x2)
     PhasePoint M;
     M.SetValue(x1,x2);
     M.PrintValue();
-    M.FindDchi2(1); PlotContour();
+    M.FindDchi2(1);
+    PlotContour(M.chiTemp);
     printf("\n");
 }
 
@@ -407,17 +401,16 @@ int main(int null, char* in[])
 {
     //SinglePoint();
     //PlotDchi2(40,20000);
-    //SetMeasurement(0,pow(10,2.7));
     //SetMeasurement(pow(10,-2.1),pow(10,2.2));
-    SetMeasurement(pow(10,-3.2),pow(10,1.7));
-
-
+    SetMeasurement(0,pow(10,2.7));
+    
+    
 
     /*
      double x1=0;
      double x2=0;
      sscanf(in[2],"%lf%lf",&x1,&x2);
      */
-
+    
     return 0;
 }

@@ -33,6 +33,7 @@ extern vector<double> Xbest(2,0);   //MUST INITIALIZE
 extern double chi2best=0;           //MUST INITIALIZE
 
 
+
 void PrintVector(vector<double> a)
 {   // mathematic tools
     // show vector
@@ -143,11 +144,11 @@ public:
     void SetValue (double x1, double x2);
     void PrintValue();
     void FindDchi2(int samples);
-
+    
     double sin2;
     double dm2;
     double dchi2;
-
+    
     vector<double> P;       //Probability in 5 bands, [1 2 3 4 5]
     vector<double> muTrue;  //P[5]*10000
 };
@@ -191,12 +192,12 @@ vector<double> FindMinimum(double x1, double x2)
     John.SetMaxIterations(100000);
     int err1 = John.Migrad();   //NEVER DELETE IT!!!!!!
     while (0) err1 = 0;
-
+    
     double x1_,x1_err;
     double x2_,x2_err;
     John.GetParameter(0,x1_,x1_err);
     John.GetParameter(1,x2_,x2_err);
-
+    
     vector<double> vec(2,0);
     vec[0] = x1_;
     vec[1] = x2_;
@@ -248,8 +249,8 @@ void PlotDchi2(int N,int samples)   //points,samples
         }
     }
     //PrintVector(dchi2V);
-
-
+    
+    
     //do plot
     TCanvas cvs;
     cvs.SetWindowSize(200,200);
@@ -260,20 +261,20 @@ void PlotDchi2(int N,int samples)   //points,samples
     gStyle->SetOptStat(0);  //hide notes
     TAxis *xa = hist->GetXaxis();
     TAxis *ya = hist->GetYaxis();
-
+    
     xa->SetTitle("log_{10}(sin^{2}(2#theta))");
     ya->SetTitle("log_{10}(#Delta m^{2})");
     hist->Draw("surf3");    cvs.Print("1.png");    //good
     hist->Draw("LEGO2Z");   cvs.Print("2.png");    //good
     hist->Draw("COLZ");     cvs.Print("3.png");    //good
-
+    
     //save Matrix
     remove("Matrix");
     ofstream ofile;
     ofile.open("Matrix",ios::out|ios::app);
     for (int i=0;i<N;i++)   for (int j=0;j<N;j++)   ofile<<Matrix[i][j]<<endl;
     ofile.close();
-
+    
     //interpolation
     printf("Interpolating...\n");
     int add = 9;    //points between 2 origin points.
@@ -286,14 +287,14 @@ void PlotDchi2(int N,int samples)   //points,samples
             Matrix2[i][j] = hist->Interpolate(x,y);
         }
     printf("Done\n");
-
+    
     //save Matrix2
     remove("Matrix2");
     ofstream ofile2;
     ofile2.open("Matrix2",ios::out|ios::app);
     for (int i=0;i<N2;i++)   for (int j=0;j<N2;j++)   ofile2<<Matrix2[i][j]<<endl;
     ofile2.close();
-
+    
     //plot after interpolation
     TCanvas cvs2;
     cvs2.SetWindowSize(200,200);
@@ -304,12 +305,13 @@ void PlotDchi2(int N,int samples)   //points,samples
     gStyle->SetOptStat(0);  //hide notes
     TAxis *xa2 = hist2->GetXaxis();
     TAxis *ya2 = hist2->GetYaxis();
-
+    
     xa2->SetTitle("log_{10}(sin^{2}(2#theta))");
     ya2->SetTitle("log_{10}(#Delta m^{2})");
     hist2->Draw("surf3");    cvs2.Print("4.png");    //good
     hist2->Draw("COLZ");     cvs2.Print("5.png");    //good
     hist2->Draw("CONT3");    cvs2.Print("contour.png");    //contour
+    
 }
 
 void PoltHist1D(vector<double> vec)
@@ -323,7 +325,7 @@ void PoltHist1D(vector<double> vec)
 
     TCanvas cvs2;
     cvs2.SetWindowSize(200,200);
-
+    
     xa2->SetTitle("counts");
     ya2->SetTitle("E/GeV");
     hist2->Draw("h1st");    cvs2.Print("hist1D.png");    //good
@@ -342,7 +344,7 @@ void PlotContour()
         if(ifile.eof()!=0) break;
     }ifile.close();
     int N = int(sqrt(count-1));
-
+    
     // find dchi2 of points
     double x1=0; double x2=0;
     PhasePoint(now);
@@ -376,12 +378,12 @@ void PlotContour()
     gStyle->SetOptStat(0);  //hide notes
     TAxis *xa2 = hist2->GetXaxis();
     TAxis *ya2 = hist2->GetYaxis();
-
+    
     xa2->SetTitle("log_{10}(sin^{2}(2#theta))");
     ya2->SetTitle("log_{10}(#Delta m^{2})");
     hist2->Draw("COLZ");     cvs2.Print("contour1.png");    //good
     hist2->Draw("CONT3");    cvs2.Print("contour2.png");    //contour
-
+    
 }
 
 void SinglePoint(double x1,double x2,int samples)
@@ -410,14 +412,14 @@ int main(int null, char* in[])
     //SetMeasurement(0,pow(10,2.7));
     //SetMeasurement(pow(10,-2.1),pow(10,2.2));
     SetMeasurement(pow(10,-3.2),pow(10,1.7));
-
-
+    
+    
 
     /*
      double x1=0;
      double x2=0;
      sscanf(in[2],"%lf%lf",&x1,&x2);
      */
-
+    
     return 0;
 }

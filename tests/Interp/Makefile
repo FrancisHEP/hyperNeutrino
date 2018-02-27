@@ -8,3 +8,5 @@ main: main.o
 
 main.o: main.cpp
 	g++ $(FLAGS) -c main.cpp -o main.o
+
+
